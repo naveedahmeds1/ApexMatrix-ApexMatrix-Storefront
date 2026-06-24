@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const PRODUCTS = [
   {
@@ -29,6 +29,7 @@ export default function LuxuryStorefront() {
   const [notification, setNotification] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', address: '' });
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+  const hasLoadedLogs = useRef(false);
 
   const triggerNotification = (message: string) => {
     setNotification(message);
@@ -42,23 +43,31 @@ export default function LuxuryStorefront() {
 
   useEffect(() => {
     if (activeTab === 'tracking') {
-      setTerminalLogs(["[SYSTEM] Connecting to global logistics telemetry...", "[OK] Secure handshake established via Dublin-1 Node."]);
+      // Clean slate on every navigation to avoid exceptions
+      setTerminalLogs([
+        "[SYSTEM] Connecting to global logistics telemetry...", 
+        "[OK] Secure handshake established via Dublin-1 Node."
+      ]);
+      
       const phrases = [
         "[PIPELINE] Package verified at primary distribution hub.",
         "[LOGISTICS] Customs authorization cleared successfully.",
         "[ROUTE] Dispatching autonomous delivery drone vector.",
         "[STATUS] Telemetry link stable. Estimated drop imminent."
       ];
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i < phrases.length) {
-          setTerminalLogs(prev => [...prev, phrases[i]]);
-          i++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 1000);
-      return () => clearInterval(interval);
+      
+      let timerIds: NodeJS.Timeout[] = [];
+
+      phrases.forEach((phrase, index) => {
+        const id = setTimeout(() => {
+          setTerminalLogs(prev => [...prev, phrase]);
+        }, (index + 1) * 1000);
+        timerIds.push(id);
+      });
+
+      return () => {
+        timerIds.forEach(id => clearTimeout(id));
+      };
     }
   }, [activeTab]);
 
@@ -103,7 +112,7 @@ export default function LuxuryStorefront() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-6 py-20 lg:py-28">
         
-        {/* APPLE ISH HIGH-END PRODUCT SHOWCASE */}
+        {/* SHOWCASE */}
         {activeTab === 'shop' && (
           <div>
             <div className="text-center max-w-2xl mx-auto mb-24">
@@ -118,7 +127,7 @@ export default function LuxuryStorefront() {
               </p>
             </div>
 
-            {/* $1k Premium Product Grid */}
+            {/* Product Grid */}
             <div className="grid md:grid-cols-2 gap-10 lg:gap-14">
               {PRODUCTS.map((product) => (
                 <div key={product.id} className="bg-gradient-to-b from-zinc-950 to-black border border-zinc-900 rounded-[2.5rem] p-8 lg:p-10 flex flex-col justify-between hover:border-zinc-800 transition-all duration-500 group shadow-2xl relative">
@@ -163,7 +172,7 @@ export default function LuxuryStorefront() {
           </div>
         )}
 
-        {/* ULTRA-CLEAN LUXURY CHECKOUT */}
+        {/* CHECKOUT */}
         {activeTab === 'checkout' && (
           <div className="max-w-md mx-auto bg-zinc-950 border border-zinc-900 rounded-[2rem] p-8 lg:p-10 shadow-2xl">
             <div className="mb-8">
@@ -182,7 +191,7 @@ export default function LuxuryStorefront() {
           </div>
         )}
 
-        {/* LOGISTICS RADAR TERMINAL */}
+        {/* TRACKING TERMINAL */}
         {activeTab === 'tracking' && (
           <div className="max-w-xl mx-auto">
             <div className="flex items-center justify-between mb-5 px-1">
@@ -196,7 +205,7 @@ export default function LuxuryStorefront() {
             <div className="bg-zinc-950/80 backdrop-blur-md border border-zinc-900 rounded-2xl p-6 font-mono text-xs text-zinc-300 min-h-[250px] shadow-2xl">
               <div className="space-y-3.5">
                 {terminalLogs.map((log, index) => (
-                  <p key={index} className={`animate-fade-in ${log.includes('[OK]') || log.includes('[STATUS]') ? 'text-zinc-200 font-medium' : 'text-zinc-500'}`}>
+                  <p key={index} className="text-zinc-400">
                     &gt; {log}
                   </p>
                 ))}
@@ -208,7 +217,6 @@ export default function LuxuryStorefront() {
 
       </main>
 
-      {/* Premium Apple Fine-Print Footer */}
       <footer className="py-16 border-t border-zinc-950 text-center">
         <p className="text-[10px] font-mono text-zinc-600 tracking-[0.2em] uppercase">
           &copy; 2026 APEXMATRIX LABS INC. QUANTUM HARDWARE DESIGNED IN CALIFORNIA.
@@ -217,4 +225,4 @@ export default function LuxuryStorefront() {
 
     </div>
   );
-              }
+            }
